@@ -1,124 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JOKER - Movie Downloader</title>
-<style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: linear-gradient(to bottom right, #0f0c29, #302b63, #24243e);
-        color: white;
-        text-align: center;
-    }
-    h1 {
-        font-size: 60px;
-        color: orange;
-        margin-top: 40px;
-    }
-    h2 {
-        font-weight: normal;
-        color: #bbb;
-        margin-bottom: 40px;
-    }
-    .error {
-        font-size: 20px;
-        font-weight: bold;
-        margin-top: 20px;
-        color: #ff4444;
-    }
-    .movie-container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        padding: 20px;
-    }
-    .movie {
-        background: rgba(255,255,255,0.1);
-        border-radius: 10px;
-        padding: 15px;
-        width: 220px;
-        transition: transform 0.2s ease-in-out;
-    }
-    .movie:hover {
-        transform: scale(1.05);
-    }
-    .movie img {
-        width: 100%;
-        height: auto;
-        border-radius: 8px;
-    }
-    .movie-title {
-        font-size: 18px;
-        margin: 10px 0;
-        font-weight: bold;
-    }
-    .download-btn {
-        background: orange;
-        color: black;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-block;
-        font-weight: bold;
-    }
-    .download-btn:hover {
-        background: #ff9900;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOKER - Movie Downloader</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #2c003e, #6a0dad);
+            color: white;
+            text-align: center;
+        }
+        h1 {
+            margin-top: 50px;
+            font-size: 50px;
+            color: orange;
+        }
+        h3 {
+            font-weight: normal;
+            color: #ccc;
+            margin-bottom: 40px;
+        }
+        .movie-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        .movie-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            width: 200px;
+            transition: transform 0.2s;
+        }
+        .movie-card:hover {
+            transform: scale(1.05);
+        }
+        .movie-card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+        .movie-card button {
+            margin-top: 10px;
+            padding: 8px;
+            width: 100%;
+            background: orange;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .movie-card button:hover {
+            background: darkorange;
+        }
+        .error {
+            color: red;
+            font-size: 18px;
+            margin-top: 20px;
+        }
+    </style>
 </head>
 <body>
+    <h1>JOKER</h1>
+    <h3>Movie Downloader</h3>
+    <div id="movie-list" class="movie-container"></div>
+    <div id="error-message" class="error"></div>
 
-<h1>JOKER</h1>
-<h2>Movie Downloader</h2>
+    <script>
+        const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQIrAzmchnyw2jtDxrzH4SjvCsyj2SmQsPXPNG3sUP_U8paVXsIT3nRDlcKIqBbf-LemfPm276hXHx/pub?gid=0&single=true&output=csv";
+        const proxy = "https://api.allorigins.win/raw?url=";
 
-<div id="error" class="error"></div>
-<div id="movies" class="movie-container"></div>
+        async function loadMovies() {
+            try {
+                const response = await fetch(proxy + encodeURIComponent(sheetURL));
+                if (!response.ok) throw new Error("Network error");
+                
+                const data = await response.text();
+                const rows = data.split("\n").slice(1);
 
-<script>
-// Google Sheet CSV URL
-const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQIrAzmchnyw2jtDxrzH4SjvCsyj2SmQsPXPNG3sUP_U8paVXsIT3nRDlcKIqBbf-LemfPm276hXHx/pub?gid=0&single=true&output=csv";
+                const container = document.getElementById("movie-list");
+                rows.forEach(row => {
+                    const [title, image, link] = row.split(",");
+                    if (title && image && link) {
+                        const card = document.createElement("div");
+                        card.className = "movie-card";
+                        card.innerHTML = `
+                            <img src="${image}" alt="${title}">
+                            <h4>${title}</h4>
+                            <button onclick="window.open('${link}', '_blank')">Download</button>
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+            } catch (error) {
+                document.getElementById("error-message").innerText = "Error Loading Data - Please check your Google Sheet link";
+                console.error(error);
+            }
+        }
 
-// CORS Proxy to avoid browser blocking
-const proxy = "https://cors.isomorphic-git.org/";
-
-async function loadMovies() {
-    try {
-        const res = await fetch(proxy + sheetURL);
-        if (!res.ok) throw new Error("Network response was not ok");
-        const csvText = await res.text();
-        const rows = csvText.split("\n").map(r => r.split(","));
-        
-        // Assuming first row is header: Title, ImageURL, DownloadLink
-        const moviesData = rows.slice(1);
-        const moviesContainer = document.getElementById("movies");
-        
-        moviesData.forEach(movie => {
-            if (movie.length < 3) return; // skip invalid rows
-            const [title, img, link] = movie;
-            const movieDiv = document.createElement("div");
-            movieDiv.className = "movie";
-            movieDiv.innerHTML = `
-                <img src="${img.trim()}" alt="${title.trim()}">
-                <div class="movie-title">${title.trim()}</div>
-                <a class="download-btn" href="${link.trim()}" target="_blank">Download</a>
-            `;
-            moviesContainer.appendChild(movieDiv);
-        });
-
-    } catch (error) {
-        document.getElementById("error").innerText = "Error Loading Data - Please check your Google Sheet link.";
-        console.error("Error fetching Google Sheet:", error);
-    }
-}
-
-loadMovies();
-</script>
-
+        loadMovies();
+    </script>
 </body>
 </html>
-
