@@ -84,7 +84,11 @@
 
                 const container = document.getElementById("movie-list");
                 rows.forEach(row => {
-                    const [title, image, link] = row.split(",");
+                    const parts = row.split(",");
+                    const title = parts[0]?.trim();
+                    const image = parts[1]?.trim();
+                    const link = parts[2]?.trim();
+
                     if (title && image && link) {
                         const card = document.createElement("div");
                         card.className = "movie-card";
