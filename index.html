@@ -1,132 +1,124 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Joker Movie Downloader - Main Website</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .gradient-text {
-      background: linear-gradient(90deg, #ef4444, #f59e0b, #ef4444);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JOKER - Movie Downloader</title>
+<style>
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom right, #0f0c29, #302b63, #24243e);
+        color: white;
+        text-align: center;
+    }
+    h1 {
+        font-size: 60px;
+        color: orange;
+        margin-top: 40px;
+    }
+    h2 {
+        font-weight: normal;
+        color: #bbb;
+        margin-bottom: 40px;
+    }
+    .error {
+        font-size: 20px;
+        font-weight: bold;
+        margin-top: 20px;
+        color: #ff4444;
+    }
+    .movie-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 20px;
+        padding: 20px;
+    }
+    .movie {
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 15px;
+        width: 220px;
+        transition: transform 0.2s ease-in-out;
+    }
+    .movie:hover {
+        transform: scale(1.05);
+    }
+    .movie img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+    }
+    .movie-title {
+        font-size: 18px;
+        margin: 10px 0;
+        font-weight: bold;
     }
     .download-btn {
-      position: relative;
-      overflow: hidden;
+        background: orange;
+        color: black;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: bold;
     }
-    .ad-label {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      background: rgba(0, 0, 0, 0.7);
-      color: white;
-      padding: 2px 6px;
-      font-size: 10px;
-      border-radius: 3px;
-      z-index: 10;
+    .download-btn:hover {
+        background: #ff9900;
     }
-  </style>
+</style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-  <!-- Header -->
-  <div class="text-center py-8">
-    <h1 class="text-6xl md:text-8xl font-bold gradient-text mb-4 drop-shadow-lg">
-      JOKER
-    </h1>
-    <p class="text-xl text-gray-300 font-light">Movie Downloader</p>
-  </div>
+<body>
 
-  <!-- Image Grid -->
-  <div class="max-w-4xl mx-auto px-4 pb-8">
-    <div id="imageContainer" class="space-y-6">
-      <!-- Images will be loaded here -->
-    </div>
-  </div>
+<h1>JOKER</h1>
+<h2>Movie Downloader</h2>
 
-  <!-- Instructions (optional) -->
-  <div class="text-center py-6">
-    <p class="text-gray-400 text-sm">
-      Click on any button to download the movie.
-    </p>
-  </div>
+<div id="error" class="error"></div>
+<div id="movies" class="movie-container"></div>
 
-  <script>
-    function loadImages() {
-      const imageContainer = document.getElementById('imageContainer');
-      const savedImages = JSON.parse(localStorage.getItem('jokerImages')) || [
-        { id: 1, image: 'https://placehold.co/600x400/ef4444/ffffff?text=Image+1', link: '#' },
-        { id: 2, image: 'https://placehold.co/600x400/f59e0b/ffffff?text=Image+2', link: '#' },
-        { id: 3, image: 'https://placehold.co/600x400/3b82f6/ffffff?text=Image+3', link: '#' },
-        { id: 4, image: 'https://placehold.co/600x400/10b981/ffffff?text=Image+4', link: '#' }
-      ];
+<script>
+// Google Sheet CSV URL
+const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQQIrAzmchnyw2jtDxrzH4SjvCsyj2SmQsPXPNG3sUP_U8paVXsIT3nRDlcKIqBbf-LemfPm276hXHx/pub?gid=0&single=true&output=csv";
 
-      const pairs = [];
-      for (let i = 0; i < savedImages.length; i += 2) {
-        pairs.push(savedImages.slice(i, i + 2));
-      }
+// CORS Proxy to avoid browser blocking
+const proxy = "https://cors.isomorphic-git.org/";
 
-      let html = '';
-      pairs.forEach((pair) => {
-        html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-6">`;
-        pair.forEach((item) => {
-          html += `
-            <div class="bg-white/10 backdrop-blur-lg rounded-2xl overflow-hidden shadow-2xl border border-white/20 transform hover:scale-105 transition-all duration-300 hover:shadow-3xl">
-              <div class="aspect-w-16 aspect-h-9 bg-black">
-                <img
-                  src="${item.image}"
-                  alt="Image ${item.id}"
-                  class="w-full h-full object-contain"
-                  onerror="this.src='https://placehold.co/600x400/6b7280/ffffff?text=Image+Not+Found'"
-                />
-              </div>
-              <div class="p-4">
-                <button
-                  onclick="handleDownload(event, '${item.link}', ${item.id})"
-                  class="download-btn block w-full bg-gradient-to-r from-red-600 to-yellow-500 text-white font-bold py-3 px-4 rounded-xl text-center hover:from-red-700 hover:to-yellow-600 transform hover:scale-105 transition-all duration-200 shadow-lg text-sm relative"
-                >
-                  <span class="relative z-20">DOWNLOAD #${item.id}</span>
-                  <span class="ad-label">Ad</span>
-                </button>
-              </div>
-            </div>`;
+async function loadMovies() {
+    try {
+        const res = await fetch(proxy + sheetURL);
+        if (!res.ok) throw new Error("Network response was not ok");
+        const csvText = await res.text();
+        const rows = csvText.split("\n").map(r => r.split(","));
+        
+        // Assuming first row is header: Title, ImageURL, DownloadLink
+        const moviesData = rows.slice(1);
+        const moviesContainer = document.getElementById("movies");
+        
+        moviesData.forEach(movie => {
+            if (movie.length < 3) return; // skip invalid rows
+            const [title, img, link] = movie;
+            const movieDiv = document.createElement("div");
+            movieDiv.className = "movie";
+            movieDiv.innerHTML = `
+                <img src="${img.trim()}" alt="${title.trim()}">
+                <div class="movie-title">${title.trim()}</div>
+                <a class="download-btn" href="${link.trim()}" target="_blank">Download</a>
+            `;
+            moviesContainer.appendChild(movieDiv);
         });
-        html += `</div>`;
-      });
 
-      imageContainer.innerHTML = html;
+    } catch (error) {
+        document.getElementById("error").innerText = "Error Loading Data - Please check your Google Sheet link.";
+        console.error("Error fetching Google Sheet:", error);
     }
+}
 
-    function handleDownload(e, link, imageId) {
-      alert('Please wait while we load the download link...');
-      if (link === '#') {
-        alert('This download link is not configured yet. Please contact the administrator.');
-        return;
-      }
-      window.open(link, '_blank');
-    }
+loadMovies();
+</script>
 
-    document.addEventListener('DOMContentLoaded', function () {
-      try {
-        loadImages();
-      } catch (error) {
-        console.error('Error loading images:', error);
-        const imageContainer = document.getElementById('imageContainer');
-        imageContainer.innerHTML = `
-          <div class="text-center py-8 text-white">
-            <h3 class="text-2xl font-bold mb-4">Website Loading</h3>
-            <p class="text-gray-300">Please make sure JavaScript is enabled in your browser.</p>
-          </div>`;
-      }
-
-      // Load ad script
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = '//pl27338039.profitableratecpm.com/41/b5/de/41b5decde166143366201edb0095f815.js';
-      script.async = true;
-      document.head.appendChild(script);
-    });
-  </script>
 </body>
 </html>
+
